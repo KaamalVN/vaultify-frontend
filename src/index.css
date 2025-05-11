@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: "Inter", sans-serif;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-white transition-colors duration-300;
+  }
+
+  /* Custom scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-400 dark:bg-gray-600;
+  }
+
+  /* Dark mode neon effects */
+  .dark .neon-text {
+    @apply text-cyan-400;
+    text-shadow: 0 0 5px theme("colors.cyan.400"), 0 0 20px theme("colors.cyan.400");
+  }
+
+  .dark .neon-border {
+    @apply border-cyan-400;
+    box-shadow: 0 0 5px theme("colors.cyan.400"), inset 0 0 5px theme("colors.cyan.400");
+  }
+
+  .dark .neon-glow {
+    box-shadow: 0 0 10px theme("colors.cyan.400");
+  }
+
+  /* Disable scrolling for specific pages */
+  .no-scroll {
+    overflow: hidden;
+  }
+}
+
+/* Glassmorphism effects */
+.glass {
+  @apply bg-white bg-opacity-10 backdrop-blur-lg border border-white border-opacity-20 shadow-lg;
+}
+
+.dark .glass {
+  @apply bg-gray-900 bg-opacity-30 backdrop-blur-lg border border-gray-700 border-opacity-40;
+}
