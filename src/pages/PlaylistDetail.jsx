@@ -10,7 +10,7 @@ import { Play, MoreHorizontal, Edit2, Trash2, Music, ArrowLeft, ImageIcon } from
 export default function PlaylistDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { playlists, deletePlaylist, renamePlaylist, removeFromPlaylist } = usePlaylists()
+  const { playlists, deletePlaylist, renamePlaylist, removeFromPlaylist, updatePlaylistCover } = usePlaylists()
   const { playSong } = usePlayer()
 
   const [showMenu, setShowMenu] = useState(false)
@@ -18,6 +18,7 @@ export default function PlaylistDetail() {
   const [showCoverForm, setShowCoverForm] = useState(false)
   const [newName, setNewName] = useState("")
   const [coverUrl, setCoverUrl] = useState("")
+  const [isUploading, setIsUploading] = useState(false)
 
   const playlist = playlists.find((p) => p.id === id)
 
@@ -55,19 +56,20 @@ export default function PlaylistDetail() {
     setShowEditForm(false)
   }
 
-  const handleUpdateCover = (e) => {
+  const handleUpdateCover = async (e) => {
     e.preventDefault()
     if (coverUrl.trim()) {
-      // Update the playlist cover
-      const updatedPlaylist = { ...playlist, coverUrl: coverUrl.trim() }
-      playlists.forEach((p, index) => {
-        if (p.id === id) {
-          playlists[index] = updatedPlaylist
-        }
-      })
-      localStorage.setItem("vaultify_playlists", JSON.stringify(playlists))
+      try {
+        setIsUploading(true)
+        await updatePlaylistCover(id, coverUrl.trim())
+        setShowCoverForm(false)
+      } catch (error) {
+        console.error("Failed to update cover:", error)
+        alert("Failed to update cover image. Please try again.")
+      } finally {
+        setIsUploading(false)
+      }
     }
-    setShowCoverForm(false)
   }
 
   const handleDelete = () => {
@@ -199,13 +201,13 @@ export default function PlaylistDetail() {
                       Change Cover
                     </button>
                     {!isAutoPlaylist && (
-                      <button>
-                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100
-                        dark:hover:bg-gray-700" onClick={() => {
+                      <button
+                        className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        onClick={() => {
                           setShowMenu(false)
                           handleDelete()
                         }}
-                        >
+                      >
                         <Trash2 size={16} className="mr-2" />
                         Delete
                       </button>
@@ -257,14 +259,16 @@ export default function PlaylistDetail() {
                     type="button"
                     onClick={() => setShowCoverForm(false)}
                     className="px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    disabled={isUploading}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors"
+                    className="px-4 py-2 bg-cyan-500 text-white rounded-md hover:bg-cyan-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!coverUrl || isUploading}
                   >
-                    Save
+                    {isUploading ? "Saving..." : "Save"}
                   </button>
                 </div>
               </form>

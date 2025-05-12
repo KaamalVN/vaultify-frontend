@@ -55,12 +55,8 @@ export const PlaylistProvider = ({ children }) => {
   // Fetch cover image for a playlist
   const fetchCoverImage = async (type, name) => {
     try {
-      // This is a mock function - in a real app, you would call an actual API
-      // like Unsplash, Google Images, or a music database API
-
-      // For demonstration, we'll use a placeholder service with the name as seed
-      const encodedName = encodeURIComponent(name)
-      return `https://source.unsplash.com/300x300/?${type},${encodedName}`
+      // For auto-generated playlists, use the first song's cover
+      return null // We'll handle this in generateAutoPlaylists
     } catch (error) {
       console.error("Error fetching cover image:", error)
       return null
@@ -71,8 +67,15 @@ export const PlaylistProvider = ({ children }) => {
   const generateAutoPlaylists = async (songs) => {
     // Create a copy of existing playlists, filtering out auto-generated ones
     const userPlaylists = playlists.filter((p) => !p.isAuto && p.id !== "favorites" && p.id !== "recently-played")
-
     const systemPlaylists = playlists.filter((p) => p.id === "favorites" || p.id === "recently-played")
+
+    // Store existing auto playlist covers
+    const existingCovers = {}
+    playlists.forEach(playlist => {
+      if (playlist.isAuto && playlist.coverUrl) {
+        existingCovers[playlist.id] = playlist.coverUrl
+      }
+    })
 
     // Group by genres
     const genreGroups = {}
@@ -89,13 +92,13 @@ export const PlaylistProvider = ({ children }) => {
     // Create genre playlists
     const genrePlaylists = await Promise.all(
       Object.entries(genreGroups)
-        .filter(([_, songs]) => songs.length >= 2) // Only create playlists with at least 2 songs
+        .filter(([_, songs]) => songs.length >= 2)
         .map(async ([genre, songs]) => {
-          // Try to get a genre-specific cover image
-          const coverUrl = await fetchCoverImage("genre", genre)
-
+          const playlistId = `genre-${genre.toLowerCase().replace(/\s+/g, "-")}`
+          // Preserve existing cover or use first song's cover
+          const coverUrl = existingCovers[playlistId] || songs[0]?.coverUrl || null
           return {
-            id: `genre-${genre.toLowerCase().replace(/\s+/g, "-")}`,
+            id: playlistId,
             name: `Genre: ${genre}`,
             songs,
             isAuto: true,
@@ -106,26 +109,39 @@ export const PlaylistProvider = ({ children }) => {
 
     // Group by artists
     const artistGroups = {}
+    const artistOccurrences = {}
+
     songs.forEach((song) => {
       if (song.artist && song.artist.trim()) {
-        const artist = song.artist.trim()
-        if (!artistGroups[artist]) {
-          artistGroups[artist] = []
+        // Split artists by comma and trim each
+        const artists = song.artist.split(',').map(a => a.trim())
+        
+        // Count occurrences of each artist
+        artists.forEach(artist => {
+          artistOccurrences[artist] = (artistOccurrences[artist] || 0) + 1
+        })
+
+        // Add song to primary artist's group (first artist)
+        const primaryArtist = artists[0]
+        if (!artistGroups[primaryArtist]) {
+          artistGroups[primaryArtist] = []
         }
-        artistGroups[artist].push(song)
+        artistGroups[primaryArtist].push(song)
       }
     })
 
     // Create artist playlists
     const artistPlaylists = await Promise.all(
       Object.entries(artistGroups)
-        .filter(([_, songs]) => songs.length >= 2) // Only create playlists with at least 2 songs
+        .filter(([artist, songs]) => 
+          songs.length >= 2 || artistOccurrences[artist] >= 5
+        )
         .map(async ([artist, songs]) => {
-          // Try to get an artist-specific cover image
-          const coverUrl = await fetchCoverImage("artist", artist)
-
+          const playlistId = `artist-${artist.toLowerCase().replace(/\s+/g, "-")}`
+          // Preserve existing cover or use first song's cover
+          const coverUrl = existingCovers[playlistId] || songs[0]?.coverUrl || null
           return {
-            id: `artist-${artist.toLowerCase().replace(/\s+/g, "-")}`,
+            id: playlistId,
             name: `Artist: ${artist}`,
             songs,
             isAuto: true,
@@ -149,13 +165,13 @@ export const PlaylistProvider = ({ children }) => {
     // Create album playlists
     const albumPlaylists = await Promise.all(
       Object.entries(albumGroups)
-        .filter(([_, songs]) => songs.length >= 2) // Only create playlists with at least 2 songs
+        .filter(([_, songs]) => songs.length >= 2)
         .map(async ([album, songs]) => {
-          // Try to get an album-specific cover image
-          const coverUrl = await fetchCoverImage("album", album)
-
+          const playlistId = `album-${album.toLowerCase().replace(/\s+/g, "-")}`
+          // Preserve existing cover or use first song's cover
+          const coverUrl = existingCovers[playlistId] || songs[0]?.coverUrl || null
           return {
-            id: `album-${album.toLowerCase().replace(/\s+/g, "-")}`,
+            id: playlistId,
             name: `Album: ${album}`,
             songs,
             isAuto: true,
@@ -165,12 +181,58 @@ export const PlaylistProvider = ({ children }) => {
     )
 
     // Combine all playlists
-    setPlaylists([...systemPlaylists, ...userPlaylists, ...genrePlaylists, ...artistPlaylists, ...albumPlaylists])
+    const newPlaylists = [...systemPlaylists, ...userPlaylists, ...genrePlaylists, ...artistPlaylists, ...albumPlaylists]
+    setPlaylists(newPlaylists)
+
+    // Update server with new playlists
+    try {
+      await Promise.all(
+        newPlaylists.map(async (playlist) => {
+          if (playlist.isAuto) {
+            await fetch(endpoints.updatePlaylistMetadata, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: playlist.id,
+                name: playlist.name,
+                coverUrl: playlist.coverUrl,
+                isAuto: true
+              })
+            })
+          }
+        })
+      )
+    } catch (error) {
+      console.error("Failed to update server with playlists:", error)
+    }
   }
 
-  const createPlaylist = (name) => {
-    const id = name.toLowerCase().replace(/\s+/g, "-") + "-" + Date.now()
-    const newPlaylist = { id, name, songs: [], isAuto: false }
+  const createPlaylist = async (name, type = "playlist") => {
+    const id = `${type}-${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
+    const newPlaylist = { 
+      id, 
+      name, 
+      songs: [], 
+      isAuto: false,
+      type: type
+    }
+    
+    // Update server
+    try {
+      await fetch(endpoints.updatePlaylistMetadata, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id,
+          name,
+          type,
+          isAuto: false
+        })
+      })
+    } catch (error) {
+      console.error("Failed to create playlist on server:", error)
+    }
+
     setPlaylists([...playlists, newPlaylist])
     return id
   }
@@ -265,6 +327,32 @@ export const PlaylistProvider = ({ children }) => {
     )
   }
 
+  const updatePlaylistCover = async (playlistId, coverUrl) => {
+    try {
+      // Update server
+      await fetch(endpoints.updatePlaylistMetadata, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: playlistId,
+          coverUrl
+        })
+      })
+
+      // Update local state
+      setPlaylists(playlists.map(playlist => 
+        playlist.id === playlistId 
+          ? { ...playlist, coverUrl }
+          : playlist
+      ))
+
+      return coverUrl
+    } catch (error) {
+      console.error("Failed to update playlist cover:", error)
+      throw error
+    }
+  }
+
   return (
     <PlaylistContext.Provider
       value={{
@@ -280,6 +368,7 @@ export const PlaylistProvider = ({ children }) => {
         isFavorite,
         reorderPlaylistSongs,
         generateAutoPlaylists,
+        updatePlaylistCover,
       }}
     >
       {children}
