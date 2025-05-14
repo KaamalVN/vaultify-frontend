@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AnimatePresence } from "framer-motion"
-import { ThemeProvider } from "./contexts/ThemeContext"
+import { ThemeProvider, useTheme } from "./contexts/ThemeContext"
 import { AuthProvider, useAuth } from "./contexts/AuthContext"
 import { PlayerProvider } from "./contexts/PlayerContext"
 import { PlaylistProvider } from "./contexts/PlaylistContext"
+import { useScrollToTop } from "./utils/useScrollToTop"
 import Sidebar from "./components/Sidebar"
 import MobileNav from "./components/MobileNav"
 import Home from "./pages/Home"
@@ -30,9 +31,14 @@ const ProtectedRoute = ({ children }) => {
   return children
 }
 
+// Update the MainApp component to include themeStyle
 function MainApp() {
   const { isAuthenticated } = useAuth()
+  const { themeStyle } = useTheme()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+
+  // Add scroll to top behavior
+  useScrollToTop()
 
   useEffect(() => {
     const handleResize = () => {
@@ -47,8 +53,20 @@ function MainApp() {
     return <Login />
   }
 
+  // Determine background class based on theme style
+  const getBackgroundClass = () => {
+    switch (themeStyle) {
+      case "cartoon":
+        return "bg-pink-50 dark:bg-gray-800"
+      default:
+        return "bg-gray-50 dark:bg-gray-900"
+    }
+  }
+
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white transition-colors duration-300">
+    <div
+      className={`flex h-screen ${getBackgroundClass()} text-gray-900 dark:text-white transition-colors duration-300 ${themeStyle === "monochrome" ? "theme-monochrome" : ""}`}
+    >
       {!isMobile && <Sidebar />}
 
       <main className="flex-1 overflow-auto pb-24 md:pb-28">

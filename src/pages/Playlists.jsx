@@ -111,7 +111,9 @@ export default function Playlists() {
         <div className="text-center py-12">
           <Music size={48} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium mb-2">No playlists or albums yet</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-4">Create your first playlist or album to organize your music</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">
+            Create your first playlist or album to organize your music
+          </p>
           <button
             onClick={() => setShowCreateForm(true)}
             className="bg-purple-600 text-white px-4 py-2 rounded-md font-medium hover:bg-purple-700 transition-colors inline-flex items-center"

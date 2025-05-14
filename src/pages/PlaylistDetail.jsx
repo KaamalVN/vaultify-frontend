@@ -1,17 +1,18 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams, useNavigate } from "react-router-dom"
+import { useParams } from "react-router-dom"
 import { usePlaylists } from "../contexts/PlaylistContext"
 import { usePlayer } from "../contexts/PlayerContext"
+import { useNavigationState } from "../utils/useNavigationState"
 import SongCard from "../components/SongCard"
 import { Play, MoreHorizontal, Edit2, Trash2, Music, ArrowLeft, ImageIcon } from "lucide-react"
 
 export default function PlaylistDetail() {
   const { id } = useParams()
-  const navigate = useNavigate()
+  const { goBack } = useNavigationState()
   const { playlists, deletePlaylist, renamePlaylist, removeFromPlaylist, updatePlaylistCover } = usePlaylists()
-  const { playSong } = usePlayer()
+  const { playSong, addToQueue, clearQueue } = usePlayer()
 
   const [showMenu, setShowMenu] = useState(false)
   const [showEditForm, setShowEditForm] = useState(false)
@@ -34,7 +35,7 @@ export default function PlaylistDetail() {
       <div className="p-6">
         <div className="text-center py-12">
           <h3 className="text-xl font-medium mb-2">Playlist not found</h3>
-          <button onClick={() => navigate("/playlists")} className="text-cyan-600 hover:underline">
+          <button onClick={() => goBack("/playlists")} className="text-cyan-600 hover:underline">
             Back to Playlists
           </button>
         </div>
@@ -44,7 +45,25 @@ export default function PlaylistDetail() {
 
   const handlePlayAll = () => {
     if (playlist.songs.length > 0) {
-      playSong(playlist.songs[0])
+      console.log("Total songs in playlist:", playlist.songs.length)
+
+      // Clear existing queue first
+      clearQueue()
+
+      // Play the first song
+      const firstSong = playlist.songs[0]
+      console.log("Playing first song:", firstSong.title || firstSong.fileName)
+      playSong(firstSong)
+
+      // Add remaining songs to queue
+      const songsToQueue = playlist.songs.slice(1)
+      console.log("Songs to add to queue:", songsToQueue.length)
+
+      // Add each song individually
+      songsToQueue.forEach((song, index) => {
+        console.log("Adding to queue:", song.title || song.fileName, "at index:", index)
+        addToQueue(song)
+      })
     }
   }
 
@@ -75,7 +94,7 @@ export default function PlaylistDetail() {
   const handleDelete = () => {
     if (window.confirm(`Are you sure you want to delete "${playlist.name}"?`)) {
       deletePlaylist(id)
-      navigate("/playlists")
+      goBack("/playlists")
     }
   }
 
@@ -85,15 +104,19 @@ export default function PlaylistDetail() {
   const isSystemPlaylist = id === "favorites" || id === "recently-played"
   const isAutoPlaylist = playlist.isAuto
 
+  const handleBack = () => {
+    goBack("/playlists")
+  }
+
   return (
     <div className="p-6">
-      {/* Back button */}
+      {/* Add back button */}
       <button
-        onClick={() => navigate("/playlists")}
-        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-6"
+        onClick={handleBack}
+        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4"
       >
-        <ArrowLeft size={18} className="mr-1" />
-        Back to Playlists
+        <ArrowLeft size={20} className="mr-1" />
+        Back
       </button>
 
       {/* Header */}

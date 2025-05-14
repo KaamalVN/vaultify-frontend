@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect } from "react"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 const PlaylistContext = createContext()
 
@@ -71,7 +71,7 @@ export const PlaylistProvider = ({ children }) => {
 
     // Store existing auto playlist covers
     const existingCovers = {}
-    playlists.forEach(playlist => {
+    playlists.forEach((playlist) => {
       if (playlist.isAuto && playlist.coverUrl) {
         existingCovers[playlist.id] = playlist.coverUrl
       }
@@ -114,10 +114,10 @@ export const PlaylistProvider = ({ children }) => {
     songs.forEach((song) => {
       if (song.artist && song.artist.trim()) {
         // Split artists by comma and trim each
-        const artists = song.artist.split(',').map(a => a.trim())
-        
+        const artists = song.artist.split(",").map((a) => a.trim())
+
         // Count occurrences of each artist
-        artists.forEach(artist => {
+        artists.forEach((artist) => {
           artistOccurrences[artist] = (artistOccurrences[artist] || 0) + 1
         })
 
@@ -133,9 +133,7 @@ export const PlaylistProvider = ({ children }) => {
     // Create artist playlists
     const artistPlaylists = await Promise.all(
       Object.entries(artistGroups)
-        .filter(([artist, songs]) => 
-          songs.length >= 2 || artistOccurrences[artist] >= 5
-        )
+        .filter(([artist, songs]) => songs.length >= 2 || artistOccurrences[artist] >= 5)
         .map(async ([artist, songs]) => {
           const playlistId = `artist-${artist.toLowerCase().replace(/\s+/g, "-")}`
           // Preserve existing cover or use first song's cover
@@ -181,7 +179,13 @@ export const PlaylistProvider = ({ children }) => {
     )
 
     // Combine all playlists
-    const newPlaylists = [...systemPlaylists, ...userPlaylists, ...genrePlaylists, ...artistPlaylists, ...albumPlaylists]
+    const newPlaylists = [
+      ...systemPlaylists,
+      ...userPlaylists,
+      ...genrePlaylists,
+      ...artistPlaylists,
+      ...albumPlaylists,
+    ]
     setPlaylists(newPlaylists)
 
     // Update server with new playlists
@@ -190,17 +194,17 @@ export const PlaylistProvider = ({ children }) => {
         newPlaylists.map(async (playlist) => {
           if (playlist.isAuto) {
             await fetch(endpoints.updatePlaylistMetadata, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 id: playlist.id,
                 name: playlist.name,
                 coverUrl: playlist.coverUrl,
-                isAuto: true
-              })
+                isAuto: true,
+              }),
             })
           }
-        })
+        }),
       )
     } catch (error) {
       console.error("Failed to update server with playlists:", error)
@@ -209,25 +213,25 @@ export const PlaylistProvider = ({ children }) => {
 
   const createPlaylist = async (name, type = "playlist") => {
     const id = `${type}-${name.toLowerCase().replace(/\s+/g, "-")}-${Date.now()}`
-    const newPlaylist = { 
-      id, 
-      name, 
-      songs: [], 
+    const newPlaylist = {
+      id,
+      name,
+      songs: [],
       isAuto: false,
-      type: type
+      type: type,
     }
-    
+
     // Update server
     try {
       await fetch(endpoints.updatePlaylistMetadata, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
           name,
           type,
-          isAuto: false
-        })
+          isAuto: false,
+        }),
       })
     } catch (error) {
       console.error("Failed to create playlist on server:", error)
@@ -331,20 +335,16 @@ export const PlaylistProvider = ({ children }) => {
     try {
       // Update server
       await fetch(endpoints.updatePlaylistMetadata, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: playlistId,
-          coverUrl
-        })
+          coverUrl,
+        }),
       })
 
       // Update local state
-      setPlaylists(playlists.map(playlist => 
-        playlist.id === playlistId 
-          ? { ...playlist, coverUrl }
-          : playlist
-      ))
+      setPlaylists(playlists.map((playlist) => (playlist.id === playlistId ? { ...playlist, coverUrl } : playlist)))
 
       return coverUrl
     } catch (error) {

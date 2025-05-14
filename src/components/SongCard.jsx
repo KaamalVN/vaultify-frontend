@@ -4,10 +4,11 @@ import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { usePlayer } from "../contexts/PlayerContext"
 import { usePlaylists } from "../contexts/PlaylistContext"
+import { useTheme } from "../contexts/ThemeContext"
 import { Play, Pause, MoreHorizontal, Heart, Plus, ListMusic, Edit3, Trash2 } from "lucide-react"
 import PlaylistSelector from "./PlaylistSelector"
 import MetadataForm from "./MetadataForm"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 export default function SongCard({ song, index, showIndex = false, playlistId = null }) {
   const [showMenu, setShowMenu] = useState(false)
@@ -15,7 +16,8 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
   const [showMetadataEditor, setShowMetadataEditor] = useState(false)
   const menuRef = useRef(null)
   const { currentSong, isPlaying, playSong, togglePlay, addToQueue } = usePlayer()
-  const { playlists, toggleFavorite, isFavorite, removeFromPlaylist } = usePlaylists()
+  const { toggleFavorite, isFavorite, removeFromPlaylist } = usePlaylists()
+  const { themeStyle, themeColor } = useTheme()
 
   const isCurrentSong = currentSong && currentSong.fileName === song.fileName
   const isCurrentlyPlaying = isCurrentSong && isPlaying
@@ -106,10 +108,51 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
     }
   }
 
+  // Determine card class based on theme style
+  const getCardClass = () => {
+    switch (themeStyle) {
+      case "default":
+        return "default-card"
+      case "cartoon":
+        return "cartoon-card"
+      case "monochrome":
+      default:
+        return "bg-white dark:bg-black border border-gray-100 dark:border-gray-800 rounded-lg"
+    }
+  }
+
+  // Determine image class based on theme style
+  const getImageClass = () => {
+    switch (themeStyle) {
+      case "monochrome":
+        return "monochrome-image"
+      case "cartoon":
+        return "cartoon-filter"
+      default:
+        return ""
+    }
+  }
+
+  // Determine active indicator class based on theme style
+  const getActiveIndicatorClass = () => {
+    if (!isCurrentSong) return ""
+
+    switch (themeStyle) {
+      case "default":
+        return `border-l-4 border-${themeColor}-500`
+      case "cartoon":
+        return "border-l-4 border-yellow-400"
+      case "monochrome":
+        return "border-l-4 border-black dark:border-white"
+      default:
+        return ""
+    }
+  }
+
   return (
     <>
       <motion.div
-        className="bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg shadow-sm hover:shadow-md transition-all duration-300 p-4 cursor-pointer relative group dark:hover:bg-gray-800/80"
+        className={`${getCardClass()} ${getActiveIndicatorClass()} p-4 cursor-pointer relative group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-300`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.05 }}
@@ -117,12 +160,16 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
       >
         <div className="flex items-center">
           {/* Album Art */}
-          <div className="relative w-12 h-12 rounded-md overflow-hidden mr-4 flex-shrink-0">
-            <img
-              src={song.coverUrl || "/placeholder.svg?height=100&width=100"}
-              alt={song.fileName}
-              className="w-full h-full object-cover"
-            />
+          <div
+            className={`relative w-12 h-12 rounded-md overflow-hidden mr-4 flex-shrink-0 ${themeStyle === "cartoon" ? "" : "border border-gray-200 dark:border-gray-800"}`}
+          >
+            <div className={getImageClass()}>
+              <img
+                src={song.coverUrl || "/placeholder.svg?height=100&width=100"}
+                alt={song.fileName}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
             {/* Play/Pause Overlay */}
             <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -136,7 +183,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
             {/* Index Number */}
             {showIndex && (
               <div
-                className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? "text-cyan-400 dark:text-cyan-400" : "text-gray-700 dark:text-gray-300"} group-hover:opacity-0 transition-opacity`}
+                className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? "text-black dark:text-white" : "text-gray-700 dark:text-gray-300"} group-hover:opacity-0 transition-opacity`}
               >
                 {index + 1}
               </div>
@@ -145,7 +192,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
 
           {/* Song Info */}
           <div className="flex-1 min-w-0">
-            <h3 className={`font-medium truncate ${isCurrentSong ? "text-cyan-500 dark:text-cyan-400 neon-text" : ""}`}>
+            <h3 className={`font-medium truncate ${isCurrentSong ? "text-black dark:text-white" : ""}`}>
               {song.title || song.fileName.split(".").slice(0, -1).join(".")}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{song.artist || "Unknown Artist"}</p>
@@ -154,7 +201,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
           {/* Actions */}
           <div className="flex items-center ml-2">
             <button
-              className="p-2 text-gray-500 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors"
+              className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
               onClick={handleToggleFavorite}
             >
               <Heart size={18} className={isFavorite(song.fileName) ? "fill-red-500 text-red-500" : ""} />
@@ -162,16 +209,16 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
 
             <div className="relative" ref={menuRef}>
               <button
-                className="p-2 text-gray-500 dark:text-gray-400 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors"
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-black dark:hover:text-white transition-colors"
                 onClick={toggleMenu}
               >
                 <MoreHorizontal size={18} />
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg z-[9999] py-1 border border-gray-200 dark:border-gray-700 backdrop-blur-sm">
+                <div className={`absolute right-0 mt-2 w-48 ${getCardClass()} z-[9999] py-1`}>
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900"
                     onClick={handleAddToQueue}
                   >
                     <ListMusic size={16} className="mr-2" />
@@ -179,7 +226,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
                   </button>
 
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900"
                     onClick={handleOpenPlaylistSelector}
                   >
                     <Plus size={16} className="mr-2" />
@@ -187,7 +234,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
                   </button>
 
                   <button
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-900"
                     onClick={handleOpenMetadataEditor}
                   >
                     <Edit3 size={16} className="mr-2" />
@@ -196,7 +243,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
 
                   {playlistId && (
                     <button
-                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-900"
                       onClick={handleDeleteSong}
                     >
                       <Trash2 size={16} className="mr-2" />
@@ -216,7 +263,7 @@ export default function SongCard({ song, index, showIndex = false, playlistId = 
       {/* Metadata Editor Modal */}
       {showMetadataEditor && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[200] p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className={`${getCardClass()} max-w-md w-full max-h-[90vh] overflow-y-auto`}>
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">Edit Metadata</h2>
               <MetadataForm song={song} onSave={handleSaveMetadata} onCancel={() => setShowMetadataEditor(false)} />

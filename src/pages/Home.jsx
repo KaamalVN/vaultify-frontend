@@ -6,7 +6,7 @@ import { usePlaylists } from "../contexts/PlaylistContext"
 import SongCard from "../components/SongCard"
 import PlaylistCard from "../components/PlaylistCard"
 import { Music, RefreshCw } from "lucide-react"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 export default function Home() {
   const [audioList, setAudioList] = useState([])
@@ -111,17 +111,16 @@ export default function Home() {
         <>
           {/* Featured Section */}
           <section className="mb-10">
-            <div className="relative h-64 rounded-xl overflow-hidden mb-6 glass">
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/30 to-purple-600/30"></div>
-              <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+            <div className="relative h-64 rounded-xl overflow-hidden mb-6 border border-gray-200 dark:border-gray-800">
+              <div className="absolute inset-0 bg-gray-100 dark:bg-gray-900"></div>
               <div className="absolute inset-0 flex flex-col justify-center p-8">
-                <h2 className="text-white text-3xl font-bold mb-4 dark:neon-text">Your Music Collection</h2>
-                <p className="text-white text-lg mb-6 max-w-lg">
+                <h2 className="text-black dark:text-white text-3xl font-bold mb-4">Your Music Collection</h2>
+                <p className="text-gray-600 dark:text-gray-400 text-lg mb-6 max-w-lg">
                   {audioList.length} songs in your private vault. Enjoy your personal music collection.
                 </p>
                 <button
                   onClick={handlePlayAll}
-                  className="bg-white/20 backdrop-blur-sm text-white border border-white/30 px-6 py-3 rounded-full font-medium hover:bg-white/30 transition-all duration-300 inline-flex items-center"
+                  className="bg-black dark:bg-white text-white dark:text-black px-6 py-3 rounded-full font-medium hover:bg-gray-900 dark:hover:bg-gray-100 transition-all duration-300 inline-flex items-center"
                 >
                   <Music className="mr-2" size={18} />
                   Play All

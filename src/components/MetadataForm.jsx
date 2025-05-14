@@ -58,7 +58,7 @@ export default function MetadataForm({ song, onSave, onCancel }) {
       }
 
       const data = await response.json()
-      console.log('Received metadata:', data)
+      console.log("Received metadata:", data)
 
       // Set search results
       if (data.matches && Array.isArray(data.matches)) {

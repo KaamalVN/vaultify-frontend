@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useRef, useEffect } from "react"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 const PlayerContext = createContext()
 
@@ -60,8 +60,12 @@ export const PlayerProvider = ({ children }) => {
       if (isLooping) {
         audio.currentTime = 0
         audio.play()
-      } else {
+      } else if (queue.length > 0) {
         playNext()
+      } else {
+        // No more songs in queue, reset to paused state
+        setIsPlaying(false)
+        audio.currentTime = 0
       }
     }
 
@@ -74,7 +78,7 @@ export const PlayerProvider = ({ children }) => {
       audio.removeEventListener("loadedmetadata", handleLoadedMetadata)
       audio.removeEventListener("ended", handleEnded)
     }
-  }, [isLooping])
+  }, [isLooping, queue])
 
   useEffect(() => {
     audioRef.current.volume = volume
@@ -112,6 +116,10 @@ export const PlayerProvider = ({ children }) => {
   const seek = (time) => {
     if (time >= 0 && time <= duration) {
       audioRef.current.currentTime = time
+      // If we're at the end and seeking back, resume playback
+      if (!isPlaying && time < duration) {
+        togglePlay()
+      }
     }
   }
 
@@ -197,11 +205,23 @@ export const PlayerProvider = ({ children }) => {
   }
 
   const addToQueue = (song) => {
-    setQueue([...queue, song])
+    console.log("Adding to queue in context:", song.title || song.fileName)
+    setQueue((prevQueue) => {
+      console.log("Previous queue length:", prevQueue.length)
+      const newQueue = [...prevQueue, song]
+      console.log("New queue length:", newQueue.length)
+      return newQueue
+    })
   }
 
   const clearQueue = () => {
+    console.log("Clearing queue")
     setQueue([])
+  }
+
+  const reorderQueue = (newQueue) => {
+    console.log("Reordering queue, new length:", newQueue.length)
+    setQueue(newQueue)
   }
 
   const formatTime = (time) => {
@@ -235,6 +255,7 @@ export const PlayerProvider = ({ children }) => {
         playPrevious,
         addToQueue,
         clearQueue,
+        reorderQueue,
         formatTime,
       }}
     >

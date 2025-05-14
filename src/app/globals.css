@@ -1,0 +1,15 @@
+.cartoon-filter {
+  filter: saturate(1.4) contrast(1.1) url('#oil-paint');
+}
+
+@supports (filter: url('#oil-paint')) {
+  .cartoon-filter {
+    filter: saturate(1.4) contrast(1.1) url('#oil-paint');
+  }
+}
+
+@supports not (filter: url('#oil-paint')) {
+  .cartoon-filter {
+    filter: saturate(1.4) contrast(1.1) brightness(1.1);
+  }
+} 

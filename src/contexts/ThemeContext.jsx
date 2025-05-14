@@ -17,6 +17,12 @@ export const ThemeProvider = ({ children }) => {
     return savedColor || "cyan"
   })
 
+  // Add new state for theme style with three options: default, monochrome, cartoon
+  const [themeStyle, setThemeStyle] = useState(() => {
+    const savedStyle = localStorage.getItem("theme_style")
+    return savedStyle || "default"
+  })
+
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add("dark")
@@ -72,9 +78,25 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty(`--color-${themeColor}-${shade}`, value)
     })
 
-    // Update CSS for neon effects
+    // Update CSS for theme effects
     const style = document.createElement("style")
     style.textContent = `
+      .theme-default .accent-bg {
+        background-color: var(--color-${themeColor}-500);
+      }
+      
+      .theme-default .accent-text {
+        color: var(--color-${themeColor}-500);
+      }
+      
+      .theme-default .accent-border {
+        border-color: var(--color-${themeColor}-500);
+      }
+      
+      .theme-default .accent-fill {
+        fill: var(--color-${themeColor}-500);
+      }
+      
       .dark .neon-text {
         color: var(--color-${themeColor}-400) !important;
         text-shadow: 0 0 5px var(--color-${themeColor}-400), 0 0 20px var(--color-${themeColor}-400) !important;
@@ -87,6 +109,14 @@ export const ThemeProvider = ({ children }) => {
       
       .dark .neon-glow {
         box-shadow: 0 0 10px var(--color-${themeColor}-400) !important;
+      }
+      
+      .theme-cartoon .cartoon-primary {
+        background-color: var(--color-${themeColor}-500);
+      }
+      
+      .theme-cartoon .cartoon-secondary {
+        background-color: var(--color-${themeColor}-400);
       }
     `
 
@@ -104,12 +134,34 @@ export const ThemeProvider = ({ children }) => {
     localStorage.setItem("theme_color", themeColor)
   }, [themeColor])
 
+  // Add new effect for theme style
+  useEffect(() => {
+    const root = document.documentElement
+
+    // Remove all theme classes first
+    root.classList.remove("theme-default", "theme-monochrome", "theme-cartoon")
+
+    // Add the appropriate theme class
+    root.classList.add(`theme-${themeStyle}`)
+
+    localStorage.setItem("theme_style", themeStyle)
+  }, [themeStyle])
+
   const toggleTheme = () => {
     setDarkMode(!darkMode)
   }
 
   return (
-    <ThemeContext.Provider value={{ darkMode, toggleTheme, themeColor, setThemeColor }}>
+    <ThemeContext.Provider
+      value={{
+        darkMode,
+        toggleTheme,
+        themeColor,
+        setThemeColor,
+        themeStyle,
+        setThemeStyle,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   )

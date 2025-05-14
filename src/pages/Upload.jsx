@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { UploadIcon, Link, File, Archive, X, Edit3 } from "lucide-react"
 import UploadProgress from "../components/UploadProgress"
 import MetadataForm from "../components/MetadataForm"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 export default function Upload() {
   const [uploadMethod, setUploadMethod] = useState("file")

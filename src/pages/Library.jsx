@@ -5,7 +5,7 @@ import { usePlayer } from "../contexts/PlayerContext"
 import { usePlaylists } from "../contexts/PlaylistContext"
 import SongCard from "../components/SongCard"
 import { Search, Music, List, Grid, RefreshCw } from "lucide-react"
-import { endpoints } from '../utils/api'
+import { endpoints } from "../utils/api"
 
 export default function Library() {
   const [audioList, setAudioList] = useState([])

@@ -1,5 +1,5 @@
 // API URL from environment variable
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000"
 
 // API endpoints
 export const endpoints = {
@@ -11,4 +11,4 @@ export const endpoints = {
   updatePlaylistMetadata: `${API_URL}/update-playlist-metadata`,
   playlistMetadata: (id) => `${API_URL}/playlist-metadata/${id}`,
   allMetadata: `${API_URL}/all-metadata`,
-} 
+}
